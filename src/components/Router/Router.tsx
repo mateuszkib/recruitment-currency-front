@@ -10,7 +10,7 @@ import {
   type NonReducibleUnknown,
   type StateValue,
 } from "xstate";
-import { routerMachine } from "./routerMachine";
+import { routerMachine } from "../../state/machines/routerMachine";
 import { pathToState } from "../../helpers/pathToState";
 import { routes } from "./constants/routes";
 import { Box, Typography } from "@mui/material";
@@ -48,17 +48,33 @@ class Router extends Component<{}, RouterState> {
     this.actor.start();
     this.setState({ currentState: this.actor.getSnapshot() });
 
-    window.addEventListener("popstate", this.handlePopState);
+    window.addEventListener("navigate", this.handlePopState as EventListener);
+    window.addEventListener("popstate", this.handlePopState as EventListener);
   }
+
   componentWillUnmount() {
-    window.removeEventListener("popstate", this.handlePopState);
+    window.removeEventListener(
+      "navigate",
+      this.handlePopState as EventListener
+    );
+    window.removeEventListener(
+      "popstate",
+      this.handlePopState as EventListener
+    );
     this.actor.stop();
   }
 
-  handlePopState = () => {
-    const currentPath = window.location.pathname;
-    const targetState = pathToState(currentPath);
+  handlePopState = (event: Event) => {
+    let targetState: string;
+
+    if (event.type === "navigate" && (event as CustomEvent).detail?.path) {
+      targetState = pathToState((event as CustomEvent).detail.path);
+    } else {
+      targetState = pathToState(window.location.pathname);
+    }
+
     this.actor.send({ type: `NAVIGATE.${targetState}` });
+    this.setState({ currentState: this.actor.getSnapshot() });
   };
 
   render() {
