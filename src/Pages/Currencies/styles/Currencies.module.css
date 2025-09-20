@@ -1,0 +1,38 @@
+.currencyCard {
+  cursor: pointer;
+  border: 1px solid var(--mui-palette-primary-lighter, #e3f2fd);
+  transition: all 0.3s ease;
+}
+
+.currencyCard:hover {
+  box-shadow: 3;
+  transform: translateY(-2px);
+}
+
+.currencyCardSelected {
+  border: 2px solid var(--mui-palette-primary-main, #1976d2);
+  background: var(--mui-palette-primary-lighter, #e3f2fd);
+}
+
+.avatarFromCurrency {
+  background-color: #757ce8 !important;
+}
+
+.avatarToCurrency {
+  background-color: #ba68c8 !important;
+}
+
+.divider {
+  margin-top: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+.selectedCurrencyChip {
+  font-weight: bold;
+}
+
+.goToExchangeButton {
+  padding: 12px 32px !important;
+  font-size: 1.2rem !important;
+  font-weight: bold !important;
+}

@@ -1,0 +1,19 @@
+.divider {
+  margin-top: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+.inputContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.rateContainer {
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}

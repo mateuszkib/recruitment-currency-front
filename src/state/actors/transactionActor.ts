@@ -1,11 +1,24 @@
-import { createActor } from "xstate";
+import {
+  createActor,
+  type ActorRefFrom,
+  type EventFrom,
+  type SnapshotFrom,
+} from "xstate";
 import { transactionMachine } from "../machines/transactionMachine";
 
-export const transactionActor = createActor(transactionMachine);
-transactionActor.start();
+type TransactionActor = ActorRefFrom<typeof transactionMachine>;
+type TransactionEvent = EventFrom<typeof transactionMachine>;
+type TransactionSnapshot = SnapshotFrom<typeof transactionMachine>;
 
-export const sendTransactionEvent = (event: any) => {
+const g = globalThis as any;
+if (!g.__transactionActor) {
+  const actor = createActor(transactionMachine);
+  actor.start();
+  g.__transactionActor = actor;
+}
+
+export const transactionActor: TransactionActor = g.__transactionActor;
+export const sendTransactionEvent = (event: TransactionEvent) =>
   transactionActor.send(event);
-};
-
-export const getTransactionState = () => transactionActor.getSnapshot();
+export const getTransactionState = (): TransactionSnapshot =>
+  transactionActor.getSnapshot();

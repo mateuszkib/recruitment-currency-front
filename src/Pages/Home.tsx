@@ -1,11 +1,11 @@
 import Container from "@mui/material/Container";
 import Paper from "@mui/material/Paper";
 import Divider from "@mui/material/Divider";
-import { Header } from "../Home/Header";
-import { Features } from "../Home/Features";
-import { Terms } from "../Home/Terms";
-import { TermsAccept } from "../Home/TermsAccept";
-import styles from "../Home/styles/Home.module.css";
+import { Header } from "../components/Home/Header";
+import { Features } from "../components/Home/Features";
+import { Terms } from "../components/Home/Terms";
+import { TermsAccept } from "../components/Home/TermsAccept";
+import styles from "../components/Home/styles/Home.module.css";
 
 const Home = () => {
   return (

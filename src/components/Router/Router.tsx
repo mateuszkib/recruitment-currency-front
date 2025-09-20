@@ -13,7 +13,7 @@ import {
 import { routerMachine } from "../../state/machines/routerMachine";
 import { pathToState } from "../../helpers/pathToState";
 import { routes } from "./constants/routes";
-import { Box, Typography } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 import { NotFound } from "../NotFound";
 
 interface RouterState {
@@ -99,7 +99,11 @@ class Router extends Component<{}, RouterState> {
 
     if (component) {
       const Component = component;
-      return <Component />;
+      return (
+        <Container maxWidth="lg">
+          <Component />
+        </Container>
+      );
     }
 
     return <NotFound />;

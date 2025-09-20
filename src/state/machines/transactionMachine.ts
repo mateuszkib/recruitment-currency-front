@@ -1,12 +1,18 @@
 import { assign, createMachine } from "xstate";
+import type { Rate } from "../../interfaces/Rate";
 
 const transactionMachine = createMachine({
   id: "transaction",
   initial: "start",
   context: {
     termsAccepted: false,
-    fromCurrency: null as string | null,
-    toCurrency: null as string | null,
+    rate: {
+      currency: null as string | null,
+      from: null as string | null,
+      to: null as string | null,
+      buy: null as string | null,
+      sell: null as string | null,
+    } as Rate,
     amount: null as number | null,
     paymentInfo: null as {
       cardNumber: string;
@@ -14,6 +20,23 @@ const transactionMachine = createMachine({
       cvv: string;
     } | null,
     transactionId: null as number | null,
+  },
+  on: {
+    SELECT_CURRENCY: {
+      actions: assign({
+        rate: ({ event }) => {
+          const [from, to] = event.rate.currency?.split("/") || [];
+
+          return {
+            currency: event.rate.currency,
+            from,
+            to,
+            buy: event.rate.buy,
+            sell: event.rate.sell,
+          };
+        },
+      }),
+    },
   },
   states: {
     start: {
@@ -25,49 +48,14 @@ const transactionMachine = createMachine({
         },
       },
     },
-    selectCurrency: {
-      on: {
-        SELECT_CURRENCY: {
-          actions: assign({
-            fromCurrency: (_ctx, event: any) => event.fromCurrency,
-            toCurrency: (_ctx, event: any) => event.toCurrency,
-          }),
-          target: "enterAmount",
-        },
-      },
-    },
     enterAmount: {
       on: {
         ENTER_AMOUNT: {
           actions: assign({
             amount: (_ctx, event: any) => event.amount,
           }),
-          target: "enterPaymentInfo",
         },
       },
-    },
-    enterPaymentInfo: {
-      on: {
-        ENTER_PAYMENT_INFO: {
-          actions: assign({
-            paymentInfo: (_ctx, event: any) => event.paymentInfo,
-          }),
-          target: "confirmTransaction",
-        },
-      },
-    },
-    confirmTransaction: {
-      on: {
-        CONFIRM_TRANSACTION: {
-          actions: assign({
-            transactionId: (_ctx, event: any) => event.transactionId,
-          }),
-          target: "transactionComplete",
-        },
-      },
-    },
-    transactionComplete: {
-      type: "final",
     },
   },
 });
