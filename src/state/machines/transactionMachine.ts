@@ -1,5 +1,10 @@
-import { assign, createMachine } from "xstate";
+import { assign, createMachine, fromPromise } from "xstate";
 import type { Rate } from "../../interfaces/Rate";
+import { submitPayment } from "../services/submitPayment";
+
+const paymentActor = fromPromise(async ({ input }) => {
+  return submitPayment(input);
+});
 
 const transactionMachine = createMachine({
   id: "transaction",
@@ -92,7 +97,39 @@ const transactionMachine = createMachine({
     },
     payment: {
       on: {
-        SUBMIT_PAYMENT: {},
+        SUBMIT_PAYMENT: {
+          target: "processingPayment",
+        },
+      },
+    },
+    processingPayment: {
+      invoke: {
+        src: paymentActor,
+        input: ({ context }) => context,
+        onDone: {
+          actions: assign({
+            transactionId: ({ event }: any) => {
+              return event.output.transactionId;
+            },
+          }),
+          target: "paymentSuccess",
+        },
+        onError: {
+          target: "paymentError",
+        },
+      },
+    },
+    paymentSuccess: {
+      type: "final",
+    },
+    paymentError: {
+      on: {
+        RETRY_PAYMENT: {
+          target: "payment",
+        },
+        CANCEL: {
+          target: "enterAmount",
+        },
       },
     },
   },
