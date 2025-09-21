@@ -1,4 +1,4 @@
-export interface Rate {
+export interface ExchangeRate {
   currency: string | null;
   from: string | null;
   to: string | null;

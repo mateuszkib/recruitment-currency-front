@@ -4,7 +4,7 @@ import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Typography from "@mui/material/Typography";
 import styles from "./styles/TermsAccept.module.css";
-import { setSessionLocalStorage } from "../../helpers/setSessionLocalStorage";
+import { setSessionStorage } from "../../helpers/setSessionLocalStorage";
 import { transactionActor } from "../../state/actors/transactionActor";
 import { XStateConnectedComponent } from "../XStateConnectedComponent";
 
@@ -17,6 +17,19 @@ export class TermsAccept extends XStateConnectedComponent<{}, {}> {
     this.subscribeToActor(transactionActor, () => {
       this.forceUpdate();
     });
+
+    const currentState = transactionActor.getSnapshot().value;
+
+    if (currentState !== "start") {
+      const savedData = JSON.parse(sessionStorage.getItem("session") || "{}");
+
+      if (Object.hasOwn(savedData, "termsAccepted")) {
+        transactionActor.send({
+          type: "SYNC_START",
+          termsAccepted: savedData.termsAccepted,
+        });
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -27,7 +40,7 @@ export class TermsAccept extends XStateConnectedComponent<{}, {}> {
     const { termsAccepted } = transactionActor.getSnapshot().context;
 
     transactionActor.send({ type: "ACCEPT_TERMS" });
-    setSessionLocalStorage({ termsAccepted: !termsAccepted });
+    setSessionStorage({ termsAccepted: !termsAccepted });
   };
 
   handleStartExchange = () => {

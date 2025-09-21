@@ -1,106 +1,57 @@
 import { Component } from "react";
-import {
-  Actor,
-  createActor,
-  type AnyActorRef,
-  type AnyEventObject,
-  type MachineContext,
-  type MachineSnapshot,
-  type MetaObject,
-  type NonReducibleUnknown,
-  type StateValue,
-} from "xstate";
-import { routerMachine } from "../../state/machines/routerMachine";
-import { pathToState } from "../../helpers/pathToState";
 import { routes } from "./constants/routes";
-import { Box, Container, Typography } from "@mui/material";
+import { Container } from "@mui/material";
 import { NotFound } from "../NotFound";
 
 interface RouterState {
-  currentState: MachineSnapshot<
-    MachineContext,
-    AnyEventObject,
-    Record<string, AnyActorRef>,
-    StateValue,
-    string,
-    NonReducibleUnknown,
-    MetaObject,
-    any
-  > | null;
+  currentPath: string;
 }
 
 class Router extends Component<{}, RouterState> {
-  private actor: Actor<typeof routerMachine>;
-
   constructor(props: {}) {
     super(props);
 
-    this.actor = createActor(routerMachine);
     this.state = {
-      currentState: null,
+      currentPath: window.location.pathname,
     };
   }
 
   componentDidMount() {
-    this.actor.subscribe((state) => {
-      this.setState({ currentState: state });
-    });
-    this.actor.start();
-    this.setState({ currentState: this.actor.getSnapshot() });
-
-    window.addEventListener("navigate", this.handlePopState as EventListener);
-    window.addEventListener("popstate", this.handlePopState as EventListener);
+    window.addEventListener("navigate", this.handleNavigation as EventListener);
+    window.addEventListener("popstate", this.handleNavigation as EventListener);
   }
 
   componentWillUnmount() {
     window.removeEventListener(
       "navigate",
-      this.handlePopState as EventListener
+      this.handleNavigation as EventListener
     );
     window.removeEventListener(
       "popstate",
-      this.handlePopState as EventListener
+      this.handleNavigation as EventListener
     );
-    this.actor.stop();
   }
 
-  handlePopState = (event: Event) => {
-    let targetState: string;
+  handleNavigation = (event: Event) => {
+    let newPath: string;
 
     if (event.type === "navigate" && (event as CustomEvent).detail?.path) {
-      targetState = pathToState((event as CustomEvent).detail.path);
+      newPath = (event as CustomEvent).detail.path;
+      window.history.pushState({}, "", newPath);
     } else {
-      targetState = pathToState(window.location.pathname);
+      newPath = window.location.pathname;
     }
 
-    this.actor.send({ type: `NAVIGATE.${targetState}` });
-    this.setState({ currentState: this.actor.getSnapshot() });
-
-    window.history.pushState({}, "", `/${targetState}`);
+    this.setState({ currentPath: newPath });
   };
 
   render() {
-    const { currentState } = this.state;
+    const { currentPath } = this.state;
 
-    if (!currentState) {
-      return (
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          minHeight="100vh"
-        >
-          <Typography>Ładowanie...</Typography>
-        </Box>
-      );
-    }
+    const route = routes.find((r) => r.path === currentPath);
 
-    const component = routes.find((route) =>
-      currentState.matches(pathToState(route.path))
-    )?.component;
-
-    if (component) {
-      const Component = component;
+    if (route) {
+      const Component = route.component;
       return (
         <Container maxWidth="lg">
           <Component />

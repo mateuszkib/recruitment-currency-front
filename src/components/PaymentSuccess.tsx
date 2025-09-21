@@ -27,7 +27,7 @@ const PaymentSuccess: React.FC = () => {
 
   const handleBackToHome = () => {
     transactionActor.send({ type: "RESET" });
-
+    sessionStorage.removeItem("session");
     window.dispatchEvent(
       new CustomEvent("navigate", { detail: { path: "/" } })
     );

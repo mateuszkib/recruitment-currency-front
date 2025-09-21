@@ -30,15 +30,13 @@ class Payment extends XStateConnectedComponent<{}, {}> {
   }
 
   handleSubmit = (e: React.FormEvent) => {
-    const { exchangeResult } = transactionActor.getSnapshot().context;
+    const { amount } = transactionActor.getSnapshot().context;
 
     e.preventDefault();
     transactionActor.send({
       type: "SUBMIT_PAYMENT",
-      amount: exchangeResult?.total || 0,
+      amount: amount || 0,
     });
-    // Możesz dodać nawigację do podsumowania lub komunikat sukcesu
-    // window.dispatchEvent(new CustomEvent("navigate", { detail: { path: "/summary" } }));
   };
 
   render() {

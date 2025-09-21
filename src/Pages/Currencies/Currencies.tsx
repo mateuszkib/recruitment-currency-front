@@ -1,28 +1,19 @@
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  Grid,
-  Chip,
-  Avatar,
-  Divider,
-  Container,
-} from "@mui/material";
-import { SwapHoriz, MonetizationOn } from "@mui/icons-material";
+import { Box, Button, Container } from "@mui/material";
 import { XStateConnectedComponent } from "../../components/XStateConnectedComponent";
 import {
   sendTransactionEvent,
   transactionActor,
 } from "../../state/actors/transactionActor";
-import { currencyIcons } from "../../constants/currencyIcons";
-import type { Rate } from "../../interfaces/Rate";
+import type { ExchangeRate } from "../../interfaces/ExchangeRate";
 import styles from "./styles/Currencies.module.css";
-import type { Subscription } from "xstate";
+import { fetchCurrencies } from "../../services/currencies";
+import CurrencyHeader from "./CurrencyHeader";
+import CurrencyList from "./CurrencyList";
+import { setSessionStorage } from "../../helpers/setSessionLocalStorage";
 
 interface CurrencySelectorState {
-  rates: Rate[];
+  rates: ExchangeRate[];
+  error: string;
 }
 
 class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
@@ -30,223 +21,114 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
     super(props);
     this.state = {
       rates: [],
+      error: "",
     };
+    this.handleRefresh = this.handleRefresh.bind(this);
+    this.handleCurrencySelect = this.handleCurrencySelect.bind(this);
+    this.handleContinue = this.handleContinue.bind(this);
   }
 
   private abort?: AbortController;
-  private unsubscribe?: Subscription;
 
-  componentDidMount() {
-    this.unsubscribe = transactionActor.subscribe(() => {
+  async componentDidMount() {
+    this.abort = new AbortController();
+
+    this.subscribeToActor(transactionActor, () => {
       this.forceUpdate();
     });
 
-    this.abort = new AbortController();
+    const savedData = JSON.parse(sessionStorage.getItem("session") || "{}");
+    if (savedData.rates && savedData.rates.length > 0) {
+      this.setState({ rates: savedData.rates, error: "" });
 
-    this.getCurrencies(this.abort.signal).catch((err) => {
-      if (err.name !== "AbortError") {
-        console.error("Failed to fetch currencies:", err);
+      if (savedData.rate) {
+        transactionActor.send({
+          type: "SYNC_CURRENCY",
+          rate: savedData.rate,
+        });
       }
-    });
+    } else {
+      await this.getCurrencies(this.abort.signal);
+    }
   }
 
   componentWillUnmount() {
     this.abort?.abort();
-    this.abort = undefined;
-    this.unsubscribe?.unsubscribe();
-
     super.componentWillUnmount?.();
   }
 
-  handleCurrencySelect = (rate: Rate | undefined) => {
-    sendTransactionEvent({
-      type: "SELECT_CURRENCY",
-      rate,
-    });
-  };
-
-  handleContinue = () => {
-    const { context } = transactionActor.getSnapshot();
-
-    if (context.rate.from) {
-      sendTransactionEvent({ type: "CONTINUE_TO_EXCHANGE" });
-
-      window.dispatchEvent(
-        new CustomEvent("navigate", { detail: { path: "/exchange" } })
-      );
-    }
-  };
-
-  private async getCurrencies(signal: AbortSignal) {
+  async getCurrencies(signal?: AbortSignal) {
     try {
-      const response = await fetch("/api/currencies", {
-        method: "GET",
-        headers: {
-          "x-currency-token": "dasdiubasiob1=231231238913y4-n432r2nby83rt29",
-          accept: "application/json",
-        },
-        signal,
+      this.setState({ error: "" });
+      const rates = await fetchCurrencies(signal);
+      this.setState({ rates, error: "" });
+
+      setSessionStorage({
+        rates: rates,
       });
-      const data: Rate[] = await response.json();
-
-      if (signal.aborted) return;
-
-      // Filter duplicate currency pairs (sometimes API returns duplicates)
-      const uniqueRates = data.filter(
-        (rate: Rate, index: number, self: Rate[]) =>
-          index === self.findIndex((r) => r.currency === rate.currency)
-      );
-
-      this.setState({ rates: uniqueRates });
-    } catch (error: any) {
-      if (error?.name === "AbortError") return;
-      throw error;
+    } catch (err: any) {
+      this.setState({ error: err.message || "Błąd pobierania kursów walut." });
     }
   }
 
-  getCurrencyIcon = (code: string) => {
-    const currency = currencyIcons.find((c) => c.code === code);
+  async handleRefresh() {
+    this.abort?.abort();
+    this.abort = new AbortController();
 
-    return currency ? currency.icon : <MonetizationOn />;
-  };
+    await this.getCurrencies(this.abort.signal);
+  }
 
-  renderCurrencyCard = (rate: Rate | undefined) => {
-    const { context } = transactionActor.getSnapshot();
-    const [from, to] = rate?.currency?.split("/") || [];
+  handleCurrencySelect(rate: ExchangeRate) {
+    const [from, to] = rate.currency?.split("/") || [];
+    const newRate = { ...rate, from, to };
 
-    const isSelected = context.rate.from === from;
+    setSessionStorage({ rate: newRate });
+    sendTransactionEvent({ type: "SELECT_CURRENCY", rate });
+    this.forceUpdate();
+  }
 
-    return (
-      <Grid
-        size={{
-          xs: 12,
-          sm: 6,
-          md: 4,
-          lg: 3,
-        }}
-        key={rate?.currency}
-      >
-        <Card
-          className={`${styles.currencyCard} ${
-            isSelected ? styles.currencyCardSelected : ""
-          }`}
-          onClick={() => this.handleCurrencySelect(rate)}
-        >
-          <CardContent>
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              mb={2}
-            >
-              <Box display="flex" alignItems="center" gap={1}>
-                <Avatar className={styles.avatarFromCurrency}>
-                  {this.getCurrencyIcon(from)}
-                </Avatar>
-                <Box>
-                  <Typography variant="h6" fontWeight="bold" fontSize={14}>
-                    {rate?.currency}
-                  </Typography>
-                </Box>
-              </Box>
-              <SwapHoriz color="action" />
-              <Box display="flex" alignItems="center" gap={1}>
-                <Avatar className={styles.avatarToCurrency}>
-                  {this.getCurrencyIcon(to)}
-                </Avatar>
-                <Box textAlign="right">
-                  <Typography variant="h6" fontWeight="bold" fontSize={14}>
-                    {to}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            <Divider className={styles.divider} />
-
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Box textAlign="center">
-                <Typography variant="body2" color="text.secondary">
-                  Kupno
-                </Typography>
-                <Typography variant="h6" color="success.main" fontWeight="bold">
-                  {Number(rate?.buy).toFixed(4)}
-                </Typography>
-              </Box>
-
-              <Box textAlign="center">
-                <Typography variant="body2" color="text.secondary">
-                  Sprzedaż
-                </Typography>
-                <Typography variant="h6" color="error.main" fontWeight="bold">
-                  {Number(rate?.sell).toFixed(4)}
-                </Typography>
-              </Box>
-            </Box>
-          </CardContent>
-        </Card>
-      </Grid>
+  handleContinue() {
+    setSessionStorage({
+      rate: transactionActor.getSnapshot().context.rate,
+    });
+    sendTransactionEvent({ type: "CONTINUE_TO_EXCHANGE" });
+    window.dispatchEvent(
+      new CustomEvent("navigate", { detail: { path: "/exchange" } })
     );
-  };
+  }
 
   render() {
     const { context } = transactionActor.getSnapshot();
+    const { error, rates } = this.state;
 
     return (
       <Container maxWidth="lg">
         <Box py={4}>
-          <Box textAlign="center" mb={4}>
-            <Typography
-              variant="h3"
-              component="h1"
-              gutterBottom
-              fontWeight="bold"
-            >
-              Wybierz parę walutową
-            </Typography>
-            <Typography variant="h6" color="text.secondary" mb={3}>
-              Aktualne kursy wymiany walut
-            </Typography>
-            {context.rate.from && (
-              <Chip
-                label={`Wybrano: ${context.rate.from}/${context.rate.to}`}
-                color="primary"
-                size="small"
-                className={styles.selectedCurrencyChip}
-              />
-            )}
-          </Box>
-
-          <Grid container spacing={3}>
-            {this.state.rates.map((rate) => this.renderCurrencyCard(rate))}
-          </Grid>
-
-          <Box mt={4} textAlign="center">
-            <Button
-              variant="contained"
-              size="large"
-              onClick={this.handleContinue}
-              disabled={!context.rate.from}
-              className={styles.goToExchangeButton}
-            >
-              Przejdź do wymiany
-            </Button>
-          </Box>
-
-          <Box mt={3} textAlign="center">
-            <Typography variant="body2" color="text.secondary">
-              Kursy aktualizowane na żywo • Ostatnia aktualizacja:{" "}
-              {new Date().toLocaleTimeString()}
-            </Typography>
-          </Box>
+          <CurrencyHeader context={context} styles={styles} />
+          <CurrencyList
+            rates={rates}
+            error={error}
+            onRefresh={this.handleRefresh}
+            onSelect={this.handleCurrencySelect}
+            context={context}
+            styles={styles}
+          />
+          {rates.length > 0 && (
+            <Box mt={4} textAlign="center">
+              <Button
+                variant="contained"
+                size="large"
+                onClick={this.handleContinue}
+                disabled={!context.rate.from}
+                className={styles.goToExchangeButton}
+              >
+                Przejdź do wymiany
+              </Button>
+            </Box>
+          )}
         </Box>
       </Container>
     );
   }
 }
-
 export default Currencies;

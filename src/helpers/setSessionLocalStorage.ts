@@ -1,5 +1,5 @@
-export function setSessionLocalStorage<T extends object>(data: T) {
-  const session = JSON.parse(localStorage.getItem("session") || "{}");
+export function setSessionStorage<T extends object>(data: T) {
+  const session = JSON.parse(sessionStorage.getItem("session") || "{}");
 
-  localStorage.setItem("session", JSON.stringify({ ...session, ...data }));
+  sessionStorage.setItem("session", JSON.stringify({ ...session, ...data }));
 }

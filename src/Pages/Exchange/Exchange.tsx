@@ -11,52 +11,67 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import {
-  getTransactionState,
+  sendTransactionEvent,
   transactionActor,
 } from "../../state/actors/transactionActor";
 import styles from "./styles/Exchange.module.css";
-import type { Subscription } from "xstate";
+import { setSessionStorage } from "../../helpers/setSessionLocalStorage";
 
 class Exchange extends XStateConnectedComponent<{}, {}> {
   constructor(props: {}) {
     super(props);
   }
 
-  private unsubscribe: Subscription | null = null;
-
   componentDidMount(): void {
-    this.unsubscribe = transactionActor.subscribe(() => {
+    this.subscribeToActor(transactionActor, () => {
       this.forceUpdate();
     });
+
+    const currentState = transactionActor.getSnapshot().value;
+
+    if (currentState !== "enterAmount") {
+      const savedData = JSON.parse(sessionStorage.getItem("session") || "{}");
+
+      if (savedData.rate) {
+        transactionActor.send({
+          type: "SYNC_EXCHANGE_DATA",
+          rate: savedData.rate,
+          amount: savedData.amount || "",
+          direction: savedData.direction || "buy",
+        });
+      } else {
+        // Jeśli nie ma danych w sesji, po prostu przełącz stan
+        transactionActor.send({ type: "CONTINUE_TO_EXCHANGE" });
+      }
+    }
   }
 
   componentWillUnmount(): void {
-    this.unsubscribe?.unsubscribe();
+    super.componentWillUnmount?.();
   }
 
   handleDirection = (
     _event: React.MouseEvent<HTMLElement>,
     newDirection: "buy" | "sell" | null
   ) => {
-    const { direction } = getTransactionState().context;
+    const { direction } = transactionActor.getSnapshot().context;
 
     if (newDirection !== null && newDirection !== direction) {
-      transactionActor.send({ type: "SET_DIRECTION", direction: newDirection });
+      setSessionStorage({ direction: newDirection });
+      sendTransactionEvent({ type: "SET_DIRECTION", direction: newDirection });
     }
   };
 
   handleAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
-    transactionActor.send({
-      type: "SET_AMOUNT",
-      amount: event.target.value,
-    });
+    setSessionStorage({ amount: event.target.value });
+    sendTransactionEvent({ type: "SET_AMOUNT", amount: event.target.value });
   };
 
   getCalculateObject = () => {
-    const { direction, amount } = getTransactionState().context;
+    const { direction, amount } = transactionActor.getSnapshot().context;
     const {
       context: { rate },
-    } = getTransactionState();
+    } = transactionActor.getSnapshot();
     const parsedAmount = parseFloat(amount);
     const exchangeRate =
       direction === "buy" ? Number(rate.buy) : Number(rate.sell);
@@ -76,6 +91,12 @@ class Exchange extends XStateConnectedComponent<{}, {}> {
   handleConfirmExchange = () => {
     const calculateObject = this.getCalculateObject();
 
+    setSessionStorage({
+      exchangeResult: {
+        total: calculateObject.result,
+        currency: calculateObject.resultCurrency,
+      },
+    });
     transactionActor.send({
       type: "CONFIRM_EXCHANGE",
       result: calculateObject.result,
@@ -94,7 +115,7 @@ class Exchange extends XStateConnectedComponent<{}, {}> {
   render() {
     const {
       context: { rate, direction, amount },
-    } = getTransactionState();
+    } = transactionActor.getSnapshot();
     const result = this.calculateResult();
 
     return (

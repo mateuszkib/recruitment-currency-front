@@ -1,5 +1,5 @@
 import { assign, createMachine, fromPromise } from "xstate";
-import type { Rate } from "../../interfaces/Rate";
+import type { ExchangeRate } from "../../interfaces/ExchangeRate";
 import { submitPayment } from "../services/submitPayment";
 
 const paymentActor = fromPromise(async ({ input }) => {
@@ -17,20 +17,46 @@ const transactionMachine = createMachine({
       to: null as string | null,
       buy: null as string | null,
       sell: null as string | null,
-    } as Rate,
+    } as ExchangeRate,
     amount: "",
     direction: "buy" as "buy" | "sell",
     exchangeResult: null as {
       total: number;
       currency: string;
     } | null,
-    confirmExchange: false,
-    paymentInfo: null as {
-      cardNumber: string;
-      expiryDate: string;
-      cvv: string;
-    } | null,
     transactionId: null as number | null,
+  },
+  on: {
+    RESTORE_STATE: {
+      actions: assign({
+        rate: ({ event }) => event.rate || null,
+        amount: ({ event }) => event.amount || "",
+        direction: ({ event }) => event.direction || "buy",
+        exchangeResult: ({ event }) => event.exchangeResult || null,
+        transactionId: ({ event }) => event.transactionId || null,
+        termsAccepted: ({ event }) => event.termsAccepted || false,
+      }),
+    },
+    SYNC_EXCHANGE_DATA: {
+      target: ".enterAmount",
+      actions: assign({
+        rate: ({ event }) => event.rate || null,
+        amount: ({ event }) => event.amount || "",
+        direction: ({ event }) => event.direction || "buy",
+      }),
+    },
+    SYNC_CURRENCY: {
+      target: ".selectCurrency",
+      actions: assign({
+        rate: ({ event }) => event.rate || null,
+      }),
+    },
+    SYNC_START: {
+      target: ".start",
+      actions: assign({
+        termsAccepted: ({ event }) => event.termsAccepted || false,
+      }),
+    },
   },
   states: {
     start: {
@@ -122,9 +148,6 @@ const transactionMachine = createMachine({
       },
     },
     paymentSuccess: {
-      type: "final",
-    },
-    paymentError: {
       on: {
         RESET: {
           target: "start",
@@ -140,10 +163,18 @@ const transactionMachine = createMachine({
             amount: "",
             direction: "buy",
             exchangeResult: null,
-            confirmExchange: false,
-            paymentInfo: null,
             transactionId: null,
           }),
+        },
+      },
+    },
+    paymentError: {
+      on: {
+        RETRY_PAYMENT: {
+          target: "payment",
+        },
+        CANCEL: {
+          target: "enterAmount",
         },
       },
     },

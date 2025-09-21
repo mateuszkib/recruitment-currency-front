@@ -12,23 +12,23 @@ export const routes: Route[] = [
     component: Home,
   },
   {
-    path: "currencies",
+    path: "/currencies",
     component: Currencies,
   },
   {
-    path: "exchange",
+    path: "/exchange",
     component: Exchange,
   },
   {
-    path: "confirm-exchange",
+    path: "/confirm-exchange",
     component: ConfirmExchange,
   },
   {
-    path: "payment",
+    path: "/payment",
     component: Payment,
   },
   {
-    path: "payment-success",
+    path: "/payment-success",
     component: PaymentSuccess,
   },
 ];
