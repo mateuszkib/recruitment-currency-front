@@ -5,57 +5,47 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Typography from "@mui/material/Typography";
 import styles from "./styles/TermsAccept.module.css";
 import { setSessionLocalStorage } from "../../helpers/setSessionLocalStorage";
-import {
-  getTransactionState,
-  sendTransactionEvent,
-  transactionActor,
-} from "../../state/actors/transactionActor";
+import { transactionActor } from "../../state/actors/transactionActor";
 import { XStateConnectedComponent } from "../XStateConnectedComponent";
 
-interface TermsAcceptState {
-  termsAccepted: boolean;
-}
-
-export class TermsAccept extends XStateConnectedComponent<
-  {},
-  TermsAcceptState
-> {
+export class TermsAccept extends XStateConnectedComponent<{}, {}> {
   constructor(props: {}) {
     super(props);
-
-    const currentState = getTransactionState();
-
-    this.state = {
-      termsAccepted: currentState.context.termsAccepted || false,
-    };
   }
 
   componentDidMount() {
-    this.subscribeToActor(transactionActor, (state) => {
-      this.setState({ termsAccepted: state.context.termsAccepted });
+    this.subscribeToActor(transactionActor, () => {
+      this.forceUpdate();
     });
   }
 
-  handleAccept = () => {
-    const newValue = !this.state.termsAccepted;
+  componentWillUnmount() {
+    super.componentWillUnmount?.();
+  }
 
-    setSessionLocalStorage({ termsAccepted: newValue });
-    sendTransactionEvent({ type: "ACCEPT_TERMS" });
+  handleAccept = () => {
+    const { termsAccepted } = transactionActor.getSnapshot().context;
+
+    transactionActor.send({ type: "ACCEPT_TERMS" });
+    setSessionLocalStorage({ termsAccepted: !termsAccepted });
   };
 
   handleStartExchange = () => {
+    transactionActor.send({ type: "START_EXCHANGE" });
     window.dispatchEvent(
       new CustomEvent("navigate", { detail: { path: "/currencies" } })
     );
   };
 
   render() {
+    const { termsAccepted } = transactionActor.getSnapshot().context;
+
     return (
       <Box mt={4} p={3} bgcolor="grey.50" borderRadius={2}>
         <FormControlLabel
           control={
             <Checkbox
-              checked={this.state.termsAccepted}
+              checked={termsAccepted}
               onChange={this.handleAccept}
               color="primary"
             />
@@ -72,7 +62,7 @@ export class TermsAccept extends XStateConnectedComponent<
             variant="contained"
             size="large"
             onClick={this.handleStartExchange}
-            disabled={!this.state.termsAccepted}
+            disabled={!termsAccepted}
             className={styles.buttonStartExchange}
           >
             Rozpocznij wymianę

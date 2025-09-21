@@ -11,6 +11,7 @@ import { transactionActor } from "../state/actors/transactionActor";
 import PaymentError from "../components/PaymentError";
 import { XStateConnectedComponent } from "../components/XStateConnectedComponent";
 import type { Subscription } from "xstate";
+import PaymentSuccess from "../components/PaymentSuccess";
 
 class Payment extends XStateConnectedComponent<{}, {}> {
   constructor(props: {}) {
@@ -50,9 +51,13 @@ class Payment extends XStateConnectedComponent<{}, {}> {
       return <PaymentError />;
     }
 
+    if (currentState === "paymentSuccess") {
+      return <PaymentSuccess />;
+    }
+
     return (
       <Box mt={6} display="flex" justifyContent="center">
-        <Card sx={{ minWidth: 350, maxWidth: 400 }}>
+        <Card sx={{ minWidth: 350 }}>
           <CardContent>
             <Typography variant="h5" align="center" gutterBottom>
               Płatność
@@ -71,8 +76,11 @@ class Payment extends XStateConnectedComponent<{}, {}> {
                 <Button
                   variant="contained"
                   color="primary"
+                  fullWidth
                   size="large"
                   type="submit"
+                  loading={currentState === "processingPayment" ? true : false}
+                  loadingPosition="end"
                 >
                   Zapłać
                 </Button>

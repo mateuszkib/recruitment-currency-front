@@ -39,6 +39,8 @@ const transactionMachine = createMachine({
           actions: assign({
             termsAccepted: ({ context }) => !context.termsAccepted,
           }),
+        },
+        START_EXCHANGE: {
           target: "selectCurrency",
         },
       },
@@ -124,11 +126,24 @@ const transactionMachine = createMachine({
     },
     paymentError: {
       on: {
-        RETRY_PAYMENT: {
-          target: "payment",
-        },
-        CANCEL: {
-          target: "enterAmount",
+        RESET: {
+          target: "start",
+          actions: assign({
+            termsAccepted: false,
+            rate: {
+              currency: null,
+              from: null,
+              to: null,
+              buy: null,
+              sell: null,
+            },
+            amount: "",
+            direction: "buy",
+            exchangeResult: null,
+            confirmExchange: false,
+            paymentInfo: null,
+            transactionId: null,
+          }),
         },
       },
     },

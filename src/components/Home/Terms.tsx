@@ -13,7 +13,7 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 export const Terms = () => {
   return (
     <>
-      <Typography variant="h5" gutterBottom fontWeight="medium">
+      <Typography variant="h5" my={1} fontWeight="medium">
         Regulamin i Warunki Korzystania
       </Typography>
 
