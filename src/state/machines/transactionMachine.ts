@@ -14,29 +14,18 @@ const transactionMachine = createMachine({
       sell: null as string | null,
     } as Rate,
     amount: null as number | null,
+    direction: "buy" as "buy" | "sell",
+    exchangeResult: null as {
+      amount: number;
+      currency: string;
+    } | null,
+    confirmExchange: false,
     paymentInfo: null as {
       cardNumber: string;
       expiryDate: string;
       cvv: string;
     } | null,
     transactionId: null as number | null,
-  },
-  on: {
-    SELECT_CURRENCY: {
-      actions: assign({
-        rate: ({ event }) => {
-          const [from, to] = event.rate.currency?.split("/") || [];
-
-          return {
-            currency: event.rate.currency,
-            from,
-            to,
-            buy: event.rate.buy,
-            sell: event.rate.sell,
-          };
-        },
-      }),
-    },
   },
   states: {
     start: {
@@ -45,14 +34,49 @@ const transactionMachine = createMachine({
           actions: assign({
             termsAccepted: ({ context }) => !context.termsAccepted,
           }),
+          target: "selectCurrency",
         },
+      },
+    },
+    selectCurrency: {
+      on: {
+        SELECT_CURRENCY: {
+          actions: assign({
+            rate: ({ event }) => {
+              const [from, to] = event.rate.currency?.split("/") || [];
+              return {
+                currency: event.rate.currency,
+                from,
+                to,
+                buy: event.rate.buy,
+                sell: event.rate.sell,
+              };
+            },
+          }),
+        },
+        CONTINUE_TO_EXCHANGE: { target: "enterAmount" },
       },
     },
     enterAmount: {
       on: {
         ENTER_AMOUNT: {
           actions: assign({
-            amount: (_ctx, event: any) => event.amount,
+            amount: ({ event }) => event.amount,
+            direction: ({ event }) => event.direction,
+            exchangeResult: ({ event }) => ({
+              amount: event.result,
+              currency: event.resultCurrency,
+            }),
+          }),
+          target: "confirmExchange",
+        },
+      },
+    },
+    confirmExchange: {
+      on: {
+        CONFIRM_EXCHANGE: {
+          actions: assign({
+            confirmExchange: true,
           }),
         },
       },

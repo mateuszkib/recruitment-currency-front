@@ -10,13 +10,15 @@ import Divider from "@mui/material/Divider";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
-import { getTransactionState } from "../../state/actors/transactionActor";
+import {
+  getTransactionState,
+  transactionActor,
+} from "../../state/actors/transactionActor";
 import styles from "./styles/Exchange.module.css";
 
 interface ExchangeState {
   direction: "buy" | "sell";
   amount: string;
-  result: number;
 }
 
 class Exchange extends XStateConnectedComponent<{}, ExchangeState> {
@@ -26,7 +28,6 @@ class Exchange extends XStateConnectedComponent<{}, ExchangeState> {
     this.state = {
       direction: "buy",
       amount: "",
-      result: 0,
     };
   }
 
@@ -36,39 +37,56 @@ class Exchange extends XStateConnectedComponent<{}, ExchangeState> {
   ) => {
     if (newDirection !== null && newDirection !== this.state.direction) {
       this.setState({ direction: newDirection });
-
-      this.handleAmount(
-        {
-          target: { value: this.state.amount },
-        } as React.ChangeEvent<HTMLInputElement>,
-        newDirection
-      );
     }
   };
 
-  handleAmount = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    newDirection?: "buy" | "sell"
-  ) => {
+  handleAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({ amount: event.target.value });
+  };
 
-    const direction = newDirection || this.state.direction;
-    const amount = parseFloat(event.target.value);
+  getCalculateObject = () => {
+    const { direction, amount } = this.state;
     const {
       context: { rate },
     } = getTransactionState();
+    const parsedAmount = parseFloat(amount);
     const exchangeRate =
       direction === "buy" ? Number(rate.buy) : Number(rate.sell);
-    const result = !isNaN(amount) && exchangeRate ? amount * exchangeRate : 0;
+    const result =
+      isNaN(parsedAmount) || !exchangeRate
+        ? 0
+        : parseFloat((parsedAmount * exchangeRate).toFixed(2));
 
-    this.setState({ result: parseFloat(result.toFixed(2)) });
+    return {
+      amount: parsedAmount,
+      result,
+      resultCurrency: direction === "buy" ? rate.to : rate.from,
+      direction,
+    };
+  };
+
+  handleConfirmExchange = () => {
+    const calculateObject = this.getCalculateObject();
+
+    transactionActor.send({
+      type: "ENTER_AMOUNT",
+      amount: calculateObject.amount,
+      direction: calculateObject.direction,
+      result: calculateObject.result,
+      resultCurrency: calculateObject.resultCurrency,
+    });
+  };
+
+  calculateResult = () => {
+    return this.getCalculateObject().result;
   };
 
   render() {
     const {
       context: { rate },
     } = getTransactionState();
-    const { direction, amount, result } = this.state;
+    const { direction, amount } = this.state;
+    const result = this.calculateResult();
 
     return (
       <Box mt={5}>

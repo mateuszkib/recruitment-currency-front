@@ -19,10 +19,9 @@ import {
 import { currencyIcons } from "../../constants/currencyIcons";
 import type { Rate } from "../../interfaces/Rate";
 import styles from "./styles/Currencies.module.css";
+import type { Subscription } from "xstate";
 
 interface CurrencySelectorState {
-  selectedFrom: string | null;
-  selectedTo: string | null;
   rates: Rate[];
 }
 
@@ -30,25 +29,20 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
   constructor(props: {}) {
     super(props);
     this.state = {
-      selectedFrom: null,
-      selectedTo: "PLN",
       rates: [],
     };
   }
 
   private abort?: AbortController;
+  private unsubscribe?: Subscription;
 
   componentDidMount() {
-    transactionActor.subscribe((state) => {
-      const [from, to] = state.context.rate.currency?.split("/") || [];
-
-      this.setState({
-        selectedFrom: from,
-        selectedTo: to,
-      });
+    this.unsubscribe = transactionActor.subscribe(() => {
+      this.forceUpdate();
     });
 
     this.abort = new AbortController();
+
     this.getCurrencies(this.abort.signal).catch((err) => {
       if (err.name !== "AbortError") {
         console.error("Failed to fetch currencies:", err);
@@ -59,6 +53,8 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
   componentWillUnmount() {
     this.abort?.abort();
     this.abort = undefined;
+    this.unsubscribe?.unsubscribe();
+
     super.componentWillUnmount?.();
   }
 
@@ -70,7 +66,11 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
   };
 
   handleContinue = () => {
-    if (this.state.selectedFrom) {
+    const { context } = transactionActor.getSnapshot();
+
+    if (context.rate.from) {
+      sendTransactionEvent({ type: "CONTINUE_TO_EXCHANGE" });
+
       window.history.pushState({}, "", "/exchange");
       window.dispatchEvent(
         new CustomEvent("navigate", { detail: { path: "/exchange" } })
@@ -106,8 +106,10 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
   };
 
   renderCurrencyCard = (rate: Rate | undefined, index: number) => {
+    const { context } = transactionActor.getSnapshot();
     const [from, to] = rate?.currency?.split("/") || [];
-    const isSelected = this.state.selectedFrom === from;
+
+    const isSelected = context.rate.from === from;
 
     return (
       <Grid
@@ -187,6 +189,11 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
   };
 
   render() {
+    const { context, value: currentState } = transactionActor.getSnapshot();
+
+    console.log("Aktualny stan:", currentState); // ← sprawdź w jakim stanie jesteś
+    console.log("Context rate:", context.rate);
+
     return (
       <Container maxWidth="lg">
         <Box py={4}>
@@ -202,9 +209,9 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
             <Typography variant="h6" color="text.secondary" mb={3}>
               Aktualne kursy wymiany walut
             </Typography>
-            {this.state.selectedFrom && (
+            {context.rate.from && (
               <Chip
-                label={`Wybrano: ${this.state.selectedFrom}/${this.state.selectedTo}`}
+                label={`Wybrano: ${context.rate.from}/${context.rate.to}`}
                 color="primary"
                 size="small"
                 className={styles.selectedCurrencyChip}
@@ -223,7 +230,7 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
               variant="contained"
               size="large"
               onClick={this.handleContinue}
-              disabled={!this.state.selectedFrom}
+              disabled={!context.rate.from}
               className={styles.goToExchangeButton}
             >
               Przejdź do wymiany
