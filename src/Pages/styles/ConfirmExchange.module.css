@@ -1,0 +1,37 @@
+/* ConfirmExchange component styles */
+
+.container {
+  margin-top: 48px;
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  min-width: 350px;
+  max-width: 400px;
+}
+
+.divider {
+  margin: 16px 0;
+}
+
+.exchangeDetails {
+  margin-bottom: 16px;
+}
+
+.resultAmount {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+  justify-content: center;
+}
+
+.errorContainer {
+  text-align: center;
+  margin-top: 48px;
+}

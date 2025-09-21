@@ -8,6 +8,7 @@ import {
   Divider,
 } from "@mui/material";
 import { transactionActor } from "../state/actors/transactionActor";
+import styles from "./styles/ConfirmExchange.module.css";
 
 const ConfirmExchange: React.FC = () => {
   const { amount, direction, rate, exchangeResult } =
@@ -15,7 +16,7 @@ const ConfirmExchange: React.FC = () => {
 
   if (!amount || !exchangeResult) {
     return (
-      <Box textAlign="center" mt={6}>
+      <Box className={styles.errorContainer}>
         <Typography color="error">
           Brak danych do potwierdzenia wymiany.
         </Typography>
@@ -42,15 +43,15 @@ const ConfirmExchange: React.FC = () => {
   };
 
   return (
-    <Box mt={6} display="flex" justifyContent="center">
-      <Card sx={{ minWidth: 350, maxWidth: 400 }}>
+    <Box className={styles.container}>
+      <Card className={styles.card}>
         <CardContent>
           <Typography variant="h5" align="center" gutterBottom>
             Potwierdź wymianę walut
           </Typography>
-          <Divider sx={{ my: 2 }} />
+          <Divider className={styles.divider} />
 
-          <Box mb={2}>
+          <Box className={styles.exchangeDetails}>
             <Typography variant="subtitle1" align="center">
               {direction === "buy"
                 ? `Sprzedajesz ${amount} ${rate.from}`
@@ -67,16 +68,16 @@ const ConfirmExchange: React.FC = () => {
             </Typography>
           </Box>
 
-          <Divider sx={{ my: 2 }} />
+          <Divider className={styles.divider} />
 
-          <Box mb={2} textAlign="center">
+          <Box className={styles.resultAmount}>
             <Typography variant="body1">Otrzymasz:</Typography>
             <Typography variant="h4" color="success.main" fontWeight="bold">
               {exchangeResult.total} {exchangeResult.currency}
             </Typography>
           </Box>
 
-          <Box display="flex" gap={2} mt={3} justifyContent="center">
+          <Box className={styles.buttonContainer}>
             <Button
               variant="contained"
               color="primary"

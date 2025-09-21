@@ -12,6 +12,7 @@ import PaymentError from "../components/PaymentError";
 import { XStateConnectedComponent } from "../components/XStateConnectedComponent";
 import type { Subscription } from "xstate";
 import PaymentSuccess from "../components/PaymentSuccess";
+import styles from "./styles/Payment.module.css";
 
 class Payment extends XStateConnectedComponent<{}, {}> {
   constructor(props: {}) {
@@ -54,15 +55,15 @@ class Payment extends XStateConnectedComponent<{}, {}> {
     }
 
     return (
-      <Box mt={6} display="flex" justifyContent="center">
-        <Card sx={{ minWidth: 350 }}>
+      <Box className={styles.container}>
+        <Card className={styles.card}>
           <CardContent>
             <Typography variant="h5" align="center" gutterBottom>
               Płatność
             </Typography>
-            <Divider sx={{ my: 2 }} />
+            <Divider className={styles.divider} />
 
-            <Box mb={2} textAlign="center">
+            <Box className={styles.paymentAmount}>
               <Typography variant="body1">Do zapłaty:</Typography>
               <Typography variant="h4" color="primary" fontWeight="bold">
                 {exchangeResult?.total} {exchangeResult?.currency}
@@ -70,7 +71,7 @@ class Payment extends XStateConnectedComponent<{}, {}> {
             </Box>
 
             <form onSubmit={this.handleSubmit}>
-              <Box display="flex" gap={2} mt={3} justifyContent="center">
+              <Box className={styles.buttonContainer}>
                 <Button
                   variant="contained"
                   color="primary"

@@ -9,9 +9,9 @@ import {
   Fade,
   Grow,
 } from "@mui/material";
-import { green } from "@mui/material/colors";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { transactionActor } from "../state/actors/transactionActor";
+import styles from "./styles/PaymentSuccess.module.css";
 
 const PaymentSuccess: React.FC = () => {
   const { exchangeResult, rate, transactionId } =
@@ -19,7 +19,7 @@ const PaymentSuccess: React.FC = () => {
 
   if (!exchangeResult || !rate || !transactionId) {
     return (
-      <Box mt={6} display="flex" justifyContent="center">
+      <Box className={styles.loadingContainer}>
         <CircularProgress />
       </Box>
     );
@@ -42,20 +42,13 @@ const PaymentSuccess: React.FC = () => {
   });
 
   return (
-    <Box mt={6} display="flex" justifyContent="center">
+    <Box className={styles.container}>
       <Grow in={true} timeout={800}>
-        <Card sx={{ minWidth: 350, maxWidth: 500, boxShadow: 4 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              mb={3}
-            >
+        <Card className={styles.card}>
+          <CardContent className={styles.cardContent}>
+            <Box className={styles.headerSection}>
               <Fade in={true} timeout={1000}>
-                <CheckCircleIcon
-                  sx={{ fontSize: 80, color: green[500], mb: 2 }}
-                />
+                <CheckCircleIcon className={styles.successIcon} />
               </Fade>
               <Typography variant="h5" align="center" gutterBottom>
                 Płatność zakończona pomyślnie!
@@ -65,9 +58,9 @@ const PaymentSuccess: React.FC = () => {
               </Typography>
             </Box>
 
-            <Divider sx={{ my: 2 }} />
+            <Divider className={styles.divider} />
 
-            <Box mb={3}>
+            <Box className={styles.detailsSection}>
               <Typography variant="subtitle2" color="text.secondary">
                 Numer transakcji
               </Typography>
@@ -76,7 +69,7 @@ const PaymentSuccess: React.FC = () => {
               </Typography>
             </Box>
 
-            <Box mb={3}>
+            <Box className={styles.detailsSection}>
               <Typography variant="subtitle2" color="text.secondary">
                 Data i godzina
               </Typography>
@@ -85,7 +78,7 @@ const PaymentSuccess: React.FC = () => {
               </Typography>
             </Box>
 
-            <Box mb={3}>
+            <Box className={styles.detailsSection}>
               <Typography variant="subtitle2" color="text.secondary">
                 Waluta
               </Typography>
@@ -94,7 +87,7 @@ const PaymentSuccess: React.FC = () => {
               </Typography>
             </Box>
 
-            <Box mb={3}>
+            <Box className={styles.detailsSection}>
               <Typography variant="subtitle2" color="text.secondary">
                 Kwota
               </Typography>
@@ -103,9 +96,9 @@ const PaymentSuccess: React.FC = () => {
               </Typography>
             </Box>
 
-            <Divider sx={{ my: 2 }} />
+            <Divider className={styles.divider} />
 
-            <Box mt={3} display="flex" justifyContent="center">
+            <Box className={styles.backButtonContainer}>
               <Button
                 variant="contained"
                 color="primary"

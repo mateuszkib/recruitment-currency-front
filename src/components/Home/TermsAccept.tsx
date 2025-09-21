@@ -18,17 +18,13 @@ export class TermsAccept extends XStateConnectedComponent<{}, {}> {
       this.forceUpdate();
     });
 
-    const currentState = transactionActor.getSnapshot().value;
+    const savedData = JSON.parse(sessionStorage.getItem("session") || "{}");
 
-    if (currentState !== "start") {
-      const savedData = JSON.parse(sessionStorage.getItem("session") || "{}");
-
-      if (Object.hasOwn(savedData, "termsAccepted")) {
-        transactionActor.send({
-          type: "SYNC_START",
-          termsAccepted: savedData.termsAccepted,
-        });
-      }
+    if (Object.hasOwn(savedData, "termsAccepted")) {
+      transactionActor.send({
+        type: "SYNC_START",
+        termsAccepted: savedData.termsAccepted,
+      });
     }
   }
 
