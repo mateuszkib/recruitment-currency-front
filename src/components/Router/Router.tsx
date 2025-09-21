@@ -75,6 +75,8 @@ class Router extends Component<{}, RouterState> {
 
     this.actor.send({ type: `NAVIGATE.${targetState}` });
     this.setState({ currentState: this.actor.getSnapshot() });
+
+    window.history.pushState({}, "", `/${targetState}`);
   };
 
   render() {

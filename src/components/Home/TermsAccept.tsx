@@ -44,7 +44,6 @@ export class TermsAccept extends XStateConnectedComponent<
   };
 
   handleStartExchange = () => {
-    window.history.pushState({}, "", "/currencies");
     window.dispatchEvent(
       new CustomEvent("navigate", { detail: { path: "/currencies" } })
     );

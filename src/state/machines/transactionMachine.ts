@@ -13,10 +13,10 @@ const transactionMachine = createMachine({
       buy: null as string | null,
       sell: null as string | null,
     } as Rate,
-    amount: null as number | null,
+    amount: "",
     direction: "buy" as "buy" | "sell",
     exchangeResult: null as {
-      amount: number;
+      total: number;
       currency: string;
     } | null,
     confirmExchange: false,
@@ -59,26 +59,40 @@ const transactionMachine = createMachine({
     },
     enterAmount: {
       on: {
-        ENTER_AMOUNT: {
+        CONFIRM_EXCHANGE: {
           actions: assign({
-            amount: ({ event }) => event.amount,
-            direction: ({ event }) => event.direction,
             exchangeResult: ({ event }) => ({
-              amount: event.result,
+              total: event.result,
               currency: event.resultCurrency,
             }),
           }),
           target: "confirmExchange",
         },
+        SET_AMOUNT: {
+          actions: assign({
+            amount: ({ event }) => event.amount,
+          }),
+        },
+        SET_DIRECTION: {
+          actions: assign({
+            direction: ({ event }) => event.direction,
+          }),
+        },
       },
     },
     confirmExchange: {
       on: {
-        CONFIRM_EXCHANGE: {
-          actions: assign({
-            confirmExchange: true,
-          }),
+        FINAL_CONFIRM: {
+          target: "payment",
         },
+        CANCEL: {
+          target: "enterAmount",
+        },
+      },
+    },
+    payment: {
+      on: {
+        SUBMIT_PAYMENT: {},
       },
     },
   },

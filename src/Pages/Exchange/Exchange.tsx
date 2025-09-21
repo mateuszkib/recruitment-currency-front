@@ -15,37 +15,45 @@ import {
   transactionActor,
 } from "../../state/actors/transactionActor";
 import styles from "./styles/Exchange.module.css";
+import type { Subscription } from "xstate";
 
-interface ExchangeState {
-  direction: "buy" | "sell";
-  amount: string;
-}
-
-class Exchange extends XStateConnectedComponent<{}, ExchangeState> {
+class Exchange extends XStateConnectedComponent<{}, {}> {
   constructor(props: {}) {
     super(props);
+  }
 
-    this.state = {
-      direction: "buy",
-      amount: "",
-    };
+  private unsubscribe: Subscription | null = null;
+
+  componentDidMount(): void {
+    this.unsubscribe = transactionActor.subscribe(() => {
+      this.forceUpdate();
+    });
+  }
+
+  componentWillUnmount(): void {
+    this.unsubscribe?.unsubscribe();
   }
 
   handleDirection = (
     _event: React.MouseEvent<HTMLElement>,
     newDirection: "buy" | "sell" | null
   ) => {
-    if (newDirection !== null && newDirection !== this.state.direction) {
-      this.setState({ direction: newDirection });
+    const { direction } = getTransactionState().context;
+
+    if (newDirection !== null && newDirection !== direction) {
+      transactionActor.send({ type: "SET_DIRECTION", direction: newDirection });
     }
   };
 
   handleAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ amount: event.target.value });
+    transactionActor.send({
+      type: "SET_AMOUNT",
+      amount: event.target.value,
+    });
   };
 
   getCalculateObject = () => {
-    const { direction, amount } = this.state;
+    const { direction, amount } = getTransactionState().context;
     const {
       context: { rate },
     } = getTransactionState();
@@ -69,12 +77,14 @@ class Exchange extends XStateConnectedComponent<{}, ExchangeState> {
     const calculateObject = this.getCalculateObject();
 
     transactionActor.send({
-      type: "ENTER_AMOUNT",
-      amount: calculateObject.amount,
-      direction: calculateObject.direction,
+      type: "CONFIRM_EXCHANGE",
       result: calculateObject.result,
       resultCurrency: calculateObject.resultCurrency,
     });
+
+    window.dispatchEvent(
+      new CustomEvent("navigate", { detail: { path: "/confirm-exchange" } })
+    );
   };
 
   calculateResult = () => {
@@ -83,9 +93,8 @@ class Exchange extends XStateConnectedComponent<{}, ExchangeState> {
 
   render() {
     const {
-      context: { rate },
+      context: { rate, direction, amount },
     } = getTransactionState();
-    const { direction, amount } = this.state;
     const result = this.calculateResult();
 
     return (
@@ -161,6 +170,7 @@ class Exchange extends XStateConnectedComponent<{}, ExchangeState> {
               size="large"
               fullWidth
               disabled={result <= 0}
+              onClick={this.handleConfirmExchange}
             >
               Zatwierdź wymianę
             </Button>

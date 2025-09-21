@@ -1,3 +1,4 @@
+import ConfirmExchange from "../../../Pages/ConfirmExchange";
 import Currencies from "../../../Pages/Currencies";
 import Exchange from "../../../Pages/Exchange";
 import Home from "../../../Pages/Home";
@@ -15,5 +16,9 @@ export const routes: Route[] = [
   {
     path: "exchange",
     component: Exchange,
+  },
+  {
+    path: "confirm-exchange",
+    component: ConfirmExchange,
   },
 ];

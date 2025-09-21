@@ -71,7 +71,6 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
     if (context.rate.from) {
       sendTransactionEvent({ type: "CONTINUE_TO_EXCHANGE" });
 
-      window.history.pushState({}, "", "/exchange");
       window.dispatchEvent(
         new CustomEvent("navigate", { detail: { path: "/exchange" } })
       );
@@ -88,11 +87,17 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
         },
         signal,
       });
-      const data = await response.json();
+      const data: Rate[] = await response.json();
 
       if (signal.aborted) return;
 
-      this.setState({ rates: data });
+      // Filter duplicate currency pairs (sometimes API returns duplicates)
+      const uniqueRates = data.filter(
+        (rate: Rate, index: number, self: Rate[]) =>
+          index === self.findIndex((r) => r.currency === rate.currency)
+      );
+
+      this.setState({ rates: uniqueRates });
     } catch (error: any) {
       if (error?.name === "AbortError") return;
       throw error;
@@ -105,7 +110,7 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
     return currency ? currency.icon : <MonetizationOn />;
   };
 
-  renderCurrencyCard = (rate: Rate | undefined, index: number) => {
+  renderCurrencyCard = (rate: Rate | undefined) => {
     const { context } = transactionActor.getSnapshot();
     const [from, to] = rate?.currency?.split("/") || [];
 
@@ -119,7 +124,7 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
           md: 4,
           lg: 3,
         }}
-        key={rate?.currency ? rate.currency + index : index}
+        key={rate?.currency}
       >
         <Card
           className={`${styles.currencyCard} ${
@@ -189,10 +194,7 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
   };
 
   render() {
-    const { context, value: currentState } = transactionActor.getSnapshot();
-
-    console.log("Aktualny stan:", currentState); // ← sprawdź w jakim stanie jesteś
-    console.log("Context rate:", context.rate);
+    const { context } = transactionActor.getSnapshot();
 
     return (
       <Container maxWidth="lg">
@@ -220,9 +222,7 @@ class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
           </Box>
 
           <Grid container spacing={3}>
-            {this.state.rates.map((rate, index) =>
-              this.renderCurrencyCard(rate, index)
-            )}
+            {this.state.rates.map((rate) => this.renderCurrencyCard(rate))}
           </Grid>
 
           <Box mt={4} textAlign="center">
