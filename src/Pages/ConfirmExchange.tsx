@@ -23,6 +23,24 @@ const ConfirmExchange: React.FC = () => {
     );
   }
 
+  const handleConfirm = () => {
+    window.dispatchEvent(
+      new CustomEvent("navigate", {
+        detail: { path: "/payment" },
+      })
+    );
+    transactionActor.send({ type: "FINAL_CONFIRM" });
+  };
+
+  const handleCancel = () => {
+    window.dispatchEvent(
+      new CustomEvent("navigate", {
+        detail: { path: "/exchange" },
+      })
+    );
+    transactionActor.send({ type: "CANCEL" });
+  };
+
   return (
     <Box mt={6} display="flex" justifyContent="center">
       <Card sx={{ minWidth: 350, maxWidth: 400 }}>
@@ -63,9 +81,7 @@ const ConfirmExchange: React.FC = () => {
               variant="contained"
               color="primary"
               size="large"
-              onClick={() =>
-                transactionActor.send({ type: "CONFIRM_EXCHANGE" })
-              }
+              onClick={handleConfirm}
             >
               Potwierdź
             </Button>
@@ -73,14 +89,7 @@ const ConfirmExchange: React.FC = () => {
               variant="outlined"
               color="secondary"
               size="large"
-              onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent("navigate", {
-                    detail: { path: "/exchange" },
-                  })
-                );
-                transactionActor.send({ type: "CANCEL" });
-              }}
+              onClick={handleCancel}
             >
               Anuluj
             </Button>
