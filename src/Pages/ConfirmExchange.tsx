@@ -52,7 +52,7 @@ const ConfirmExchange: React.FC = () => {
           <Divider className={styles.divider} />
 
           <Box className={styles.exchangeDetails}>
-            <Typography variant="subtitle1" align="center">
+            <Typography variant="subtitle1" mt={1} align="center">
               {direction === "buy"
                 ? `Sprzedajesz ${amount} ${rate.from}`
                 : `Wymieniasz ${amount} ${rate.to}`}
@@ -71,7 +71,9 @@ const ConfirmExchange: React.FC = () => {
           <Divider className={styles.divider} />
 
           <Box className={styles.resultAmount}>
-            <Typography variant="body1">Otrzymasz:</Typography>
+            <Typography variant="body1" mt={1}>
+              Otrzymasz:
+            </Typography>
             <Typography variant="h4" color="success.main" fontWeight="bold">
               {exchangeResult.total} {exchangeResult.currency}
             </Typography>

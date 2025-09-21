@@ -8,20 +8,10 @@ import {
   Divider,
 } from "@mui/material";
 import { SwapHoriz, MonetizationOn } from "@mui/icons-material";
-import type { ExchangeRate } from "../../interfaces/ExchangeRate";
+import type { CurrencyIcon } from "../../interfaces/CurrencyIcon";
+import type { CurrencyCardProps } from "../../interfaces/CurrencyCardProps";
 
-interface CurrencyCardProps {
-  rate: ExchangeRate;
-  isSelected: boolean;
-  onSelect: (rate: ExchangeRate) => void;
-  styles: any;
-  currencyIcons: { code: string; icon: React.ReactNode }[];
-}
-
-const getCurrencyIcon = (
-  code: string,
-  currencyIcons: { code: string; icon: React.ReactNode }[]
-) => {
+const getCurrencyIcon = (code: string, currencyIcons: CurrencyIcon[]) => {
   const currency = currencyIcons.find((c) => c.code === code);
   return currency ? currency.icon : <MonetizationOn />;
 };

@@ -1,14 +1,11 @@
+import { apiRequest } from "../helpers/apiRequest";
 import type { ExchangeRate } from "../interfaces/ExchangeRate";
 
 export async function fetchCurrencies(
   signal?: AbortSignal
 ): Promise<ExchangeRate[]> {
-  const response = await fetch("/api/currencies", {
+  const response = await apiRequest("/api/currencies", {
     method: "GET",
-    headers: {
-      "x-currency-token": "dasdiubasiob1=231231238913y4-n432r2nby83rt29",
-      accept: "application/json",
-    },
     signal,
   });
 

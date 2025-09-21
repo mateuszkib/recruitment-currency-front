@@ -2,16 +2,7 @@ import { Grid } from "@mui/material";
 import CurrencyCard from "./CurrencyCard";
 import CurrencyAlert from "./CurrencyAlert";
 import { currencyIcons } from "../../constants/currencyIcons";
-import type { ExchangeRate } from "../../interfaces/ExchangeRate";
-
-interface CurrencyListProps {
-  rates: ExchangeRate[];
-  error: string;
-  onRefresh: () => void;
-  onSelect: (rate: ExchangeRate) => void;
-  context: any;
-  styles: any;
-}
+import type { CurrencyListProps } from "../../interfaces/CurrencyListProps";
 
 const CurrencyList: React.FC<CurrencyListProps> = ({
   rates,

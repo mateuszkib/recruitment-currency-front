@@ -1,13 +1,5 @@
 import { Box, Typography, Chip } from "@mui/material";
-import type { SnapshotFrom } from "xstate";
-import { transactionMachine } from "../../state/machines/transactionMachine";
-
-type TransactionContext = SnapshotFrom<typeof transactionMachine>["context"];
-
-interface CurrencyHeaderProps {
-  context: TransactionContext;
-  styles: Record<string, string>;
-}
+import type { CurrencyHeaderProps } from "../../interfaces/CurrencyHeaderProps";
 
 const CurrencyHeader = ({ context, styles }: CurrencyHeaderProps) => (
   <Box textAlign="center" mb={4}>

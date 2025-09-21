@@ -1,10 +1,12 @@
-import ConfirmExchange from "../../../Pages/ConfirmExchange";
-import Currencies from "../../../Pages/Currencies";
-import Exchange from "../../../Pages/Exchange";
-import Home from "../../../Pages/Home";
-import Payment from "../../../Pages/Payment";
-import PaymentSuccess from "../../PaymentSuccess";
+import { lazy } from "react";
 import type { Route } from "../interfaces/Routes";
+
+const Home = lazy(() => import("../../../Pages/Home"));
+const Currencies = lazy(() => import("../../../Pages/Currencies"));
+const Exchange = lazy(() => import("../../../Pages/Exchange"));
+const ConfirmExchange = lazy(() => import("../../../Pages/ConfirmExchange"));
+const Payment = lazy(() => import("../../../Pages/Payment"));
+const PaymentSuccess = lazy(() => import("../../PaymentSuccess"));
 
 export const routes: Route[] = [
   {

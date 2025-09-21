@@ -1,10 +1,6 @@
 import React from "react";
 import { Alert, Button } from "@mui/material";
-
-interface CurrencyAlertProps {
-  error: string;
-  onRefresh: () => void;
-}
+import type { CurrencyAlertProps } from "../../interfaces/CurrencyAlertProps";
 
 const CurrencyAlert: React.FC<CurrencyAlertProps> = ({ error, onRefresh }) => (
   <Alert

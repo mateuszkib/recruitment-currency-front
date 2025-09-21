@@ -1,10 +1,14 @@
-import { assign, createMachine, fromPromise } from "xstate";
-import type { ExchangeRate } from "../../interfaces/ExchangeRate";
+import { createMachine, fromPromise } from "xstate";
 import { submitPayment } from "../services/submitPayment";
+import { transactionActions } from "./transactionActions";
+import { transactionGuards } from "./transactionGuards";
+import type { TransactionContext } from "./transactionTypes";
 
-const paymentActor = fromPromise(async ({ input }) => {
-  return submitPayment(input);
-});
+const paymentActor = fromPromise(
+  async ({ input }: { input: TransactionContext }) => {
+    return submitPayment(input);
+  }
+);
 
 const transactionMachine = createMachine({
   id: "transaction",
@@ -12,104 +16,77 @@ const transactionMachine = createMachine({
   context: {
     termsAccepted: false,
     rate: {
-      currency: null as string | null,
-      from: null as string | null,
-      to: null as string | null,
-      buy: null as string | null,
-      sell: null as string | null,
-    } as ExchangeRate,
+      currency: null,
+      from: null,
+      to: null,
+      buy: null,
+      sell: null,
+    },
     amount: "",
-    direction: "buy" as "buy" | "sell",
-    exchangeResult: null as {
-      total: number;
-      currency: string;
-    } | null,
-    transactionId: null as number | null,
-  },
+    direction: "buy",
+    exchangeResult: {
+      total: 0,
+      currency: "",
+    },
+    transactionId: null,
+    errors: [],
+  } as TransactionContext,
   on: {
     RESTORE_STATE: {
-      actions: assign({
-        rate: ({ event }) => event.rate || null,
-        amount: ({ event }) => event.amount || "",
-        direction: ({ event }) => event.direction || "buy",
-        exchangeResult: ({ event }) => event.exchangeResult || null,
-        transactionId: ({ event }) => event.transactionId || null,
-        termsAccepted: ({ event }) => event.termsAccepted || false,
-      }),
+      actions: "restoreState",
     },
     SYNC_EXCHANGE_DATA: {
       target: ".enterAmount",
-      actions: assign({
-        rate: ({ event }) => event.rate || null,
-        amount: ({ event }) => event.amount || "",
-        direction: ({ event }) => event.direction || "buy",
-      }),
+      actions: "syncExchangeData",
     },
     SYNC_CURRENCY: {
       target: ".selectCurrency",
-      actions: assign({
-        rate: ({ event }) => event.rate || null,
-      }),
+      actions: "syncCurrency",
     },
     SYNC_START: {
       target: ".start",
-      actions: assign({
-        termsAccepted: ({ event }) => event.termsAccepted || false,
-      }),
+      actions: "syncStart",
+    },
+    RESET: {
+      target: ".start",
+      actions: "resetContext",
+    },
+    SET_AMOUNT: {
+      actions: ["setAmount", "validateAmount"],
+    },
+    SET_DIRECTION: {
+      actions: "setDirection",
     },
   },
   states: {
     start: {
       on: {
         ACCEPT_TERMS: {
-          actions: assign({
-            termsAccepted: ({ context }) => !context.termsAccepted,
-          }),
+          actions: "toggleTerms",
         },
         START_EXCHANGE: {
           target: "selectCurrency",
+          guard: "termsAreAccepted",
         },
       },
     },
     selectCurrency: {
       on: {
         SELECT_CURRENCY: {
-          actions: assign({
-            rate: ({ event }) => {
-              const [from, to] = event.rate.currency?.split("/") || [];
-              return {
-                currency: event.rate.currency,
-                from,
-                to,
-                buy: event.rate.buy,
-                sell: event.rate.sell,
-              };
-            },
-          }),
+          actions: "setRate",
         },
-        CONTINUE_TO_EXCHANGE: { target: "enterAmount" },
+        CONTINUE_TO_EXCHANGE: {
+          target: "enterAmount",
+          guard: "hasCurrencySelected",
+        },
       },
     },
     enterAmount: {
       on: {
         CONFIRM_EXCHANGE: {
-          actions: assign({
-            exchangeResult: ({ event }) => ({
-              total: event.result,
-              currency: event.resultCurrency,
-            }),
-          }),
+          actions: "setExchangeResult",
           target: "confirmExchange",
-        },
-        SET_AMOUNT: {
-          actions: assign({
-            amount: ({ event }) => event.amount,
-          }),
-        },
-        SET_DIRECTION: {
-          actions: assign({
-            direction: ({ event }) => event.direction,
-          }),
+          guard: "hasValidAmount",
         },
       },
     },
@@ -135,11 +112,7 @@ const transactionMachine = createMachine({
         src: paymentActor,
         input: ({ context }) => context,
         onDone: {
-          actions: assign({
-            transactionId: ({ event }: any) => {
-              return event.output.transactionId;
-            },
-          }),
+          actions: "setTransactionId",
           target: "paymentSuccess",
         },
         onError: {
@@ -147,27 +120,7 @@ const transactionMachine = createMachine({
         },
       },
     },
-    paymentSuccess: {
-      on: {
-        RESET: {
-          target: "start",
-          actions: assign({
-            termsAccepted: false,
-            rate: {
-              currency: null,
-              from: null,
-              to: null,
-              buy: null,
-              sell: null,
-            },
-            amount: "",
-            direction: "buy",
-            exchangeResult: null,
-            transactionId: null,
-          }),
-        },
-      },
-    },
+    paymentSuccess: {},
     paymentError: {
       on: {
         RETRY_PAYMENT: {
@@ -179,6 +132,9 @@ const transactionMachine = createMachine({
       },
     },
   },
+}).provide({
+  actions: transactionActions as any,
+  guards: transactionGuards as any,
 });
 
 export { transactionMachine };

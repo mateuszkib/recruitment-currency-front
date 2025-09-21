@@ -1,17 +1,17 @@
+import { apiRequest } from "../../helpers/apiRequest";
+import type { TransactionContext } from "../machines/transactionTypes";
+
+type PaymentContext = Pick<TransactionContext, "amount" | "direction" | "rate">;
+
 export async function submitPayment(
-  context: any
+  context: PaymentContext
 ): Promise<{ transactionId: number }> {
   try {
-    const headers = {
-      "x-currency-token": "dasdiubasiob1=231231238913y4-n432r2nby83rt29",
-      accept: "application/json",
-      "Content-Type": "application/json",
-    };
-
-    const payRes = await fetch("/api/pay", {
+    const payRes = await apiRequest("/api/pay", {
       method: "POST",
-      headers,
-      body: JSON.stringify({ amount: context.exchangeResult.total }),
+      body: JSON.stringify({
+        amount: context.amount,
+      }),
     });
 
     if (!payRes.ok) {
@@ -23,13 +23,12 @@ export async function submitPayment(
     const payData = await payRes.json();
 
     try {
-      const transactionRes = await fetch("/api/transaction", {
+      const transactionRes = await apiRequest("/api/transaction", {
         method: "POST",
-        headers,
         body: JSON.stringify({
           type: context.direction,
           currency: context.rate.currency,
-          amount: context.exchangeResult.total,
+          amount: context.amount,
           transactionId: payData.transactionId,
         }),
       });

@@ -1,11 +1,9 @@
-import { Component } from "react";
+import { Component, Suspense } from "react";
 import { routes } from "./constants/routes";
 import { Container } from "@mui/material";
 import { NotFound } from "../NotFound";
-
-interface RouterState {
-  currentPath: string;
-}
+import { LoadingFallback } from "../LoadingFallback";
+import type { RouterState } from "../../interfaces/RouterState";
 
 class Router extends Component<{}, RouterState> {
   constructor(props: {}) {
@@ -52,9 +50,12 @@ class Router extends Component<{}, RouterState> {
 
     if (route) {
       const Component = route.component;
+
       return (
         <Container maxWidth="lg">
-          <Component />
+          <Suspense fallback={<LoadingFallback />}>
+            <Component />
+          </Suspense>
         </Container>
       );
     }

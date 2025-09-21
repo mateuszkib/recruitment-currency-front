@@ -10,11 +10,7 @@ import { fetchCurrencies } from "../../services/currencies";
 import CurrencyHeader from "./CurrencyHeader";
 import CurrencyList from "./CurrencyList";
 import { setSessionStorage } from "../../helpers/setSessionLocalStorage";
-
-interface CurrencySelectorState {
-  rates: ExchangeRate[];
-  error: string;
-}
+import type { CurrencySelectorState } from "../../interfaces/CurrencySelectorState";
 
 class Currencies extends XStateConnectedComponent<{}, CurrencySelectorState> {
   constructor(props: {}) {

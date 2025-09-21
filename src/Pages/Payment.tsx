@@ -64,7 +64,9 @@ class Payment extends XStateConnectedComponent<{}, {}> {
             <Divider className={styles.divider} />
 
             <Box className={styles.paymentAmount}>
-              <Typography variant="body1">Do zapłaty:</Typography>
+              <Typography variant="body1" mt={1}>
+                Do zapłaty:
+              </Typography>
               <Typography variant="h4" color="primary" fontWeight="bold">
                 {exchangeResult?.total} {exchangeResult?.currency}
               </Typography>

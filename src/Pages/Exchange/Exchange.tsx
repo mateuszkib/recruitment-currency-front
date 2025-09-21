@@ -16,6 +16,7 @@ import {
 } from "../../state/actors/transactionActor";
 import styles from "./styles/Exchange.module.css";
 import { setSessionStorage } from "../../helpers/setSessionLocalStorage";
+import { transactionGuards } from "../../state/machines/transactionGuards";
 
 class Exchange extends XStateConnectedComponent<{}, {}> {
   constructor(props: {}) {
@@ -40,7 +41,6 @@ class Exchange extends XStateConnectedComponent<{}, {}> {
           direction: savedData.direction || "buy",
         });
       } else {
-        // Jeśli nie ma danych w sesji, po prostu przełącz stan
         transactionActor.send({ type: "CONTINUE_TO_EXCHANGE" });
       }
     }
@@ -117,6 +117,9 @@ class Exchange extends XStateConnectedComponent<{}, {}> {
       context: { rate, direction, amount },
     } = transactionActor.getSnapshot();
     const result = this.calculateResult();
+    const { context } = transactionActor.getSnapshot();
+    const canConfirm =
+      transactionGuards.hasValidAmount({ context }) && result > 0;
 
     return (
       <Box mt={5}>
@@ -190,10 +193,12 @@ class Exchange extends XStateConnectedComponent<{}, {}> {
               color="primary"
               size="large"
               fullWidth
-              disabled={result <= 0}
+              disabled={!canConfirm}
               onClick={this.handleConfirmExchange}
             >
-              Zatwierdź wymianę
+              {canConfirm
+                ? "Zatwierdź wymianę"
+                : "Kwota musi być między 1-1000"}
             </Button>
           </CardContent>
         </Card>
